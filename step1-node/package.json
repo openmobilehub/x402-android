@@ -1,0 +1,20 @@
+{
+  "name": "step1-node",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Step 1: Node.js x402 client. Pay one Base Sepolia endpoint, print txHash. No Android, no StrongBox.",
+  "type": "module",
+  "scripts": {
+    "pay": "node pay.js"
+  },
+  "dependencies": {
+    "@x402/axios": "^2.11.0",
+    "@x402/evm": "^2.11.0",
+    "axios": "^1.7.9",
+    "dotenv": "^17.4.2",
+    "viem": "^2.48.8"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
