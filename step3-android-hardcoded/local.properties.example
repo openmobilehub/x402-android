@@ -1,0 +1,17 @@
+# Copy this file to `local.properties` (which is gitignored) and fill in values.
+# Android Studio will also auto-populate sdk.dir when you open the project.
+
+# Path to your Android SDK. On macOS this is typically:
+#   /Users/<you>/Library/Android/sdk
+# Android Studio writes this for you when you import the project; only needed
+# if you're building from the CLI without Studio.
+# sdk.dir=/Users/you/Library/Android/sdk
+
+# Test wallet for x402. Same rules as Step 1 and Step 2:
+#   - 64 hex chars, with or without 0x prefix
+#   - Testnet only, generate fresh, never reuse a key with real funds
+#   - Reuse the address from steps 1/2 — it already has Base Sepolia USDC
+PRIVATE_KEY=0xReplaceWith64HexCharsNeverCommitThisFile
+
+# Optional override. Defaults to the public x402 demo if blank.
+DEMO_URL=https://www.x402.org/protected

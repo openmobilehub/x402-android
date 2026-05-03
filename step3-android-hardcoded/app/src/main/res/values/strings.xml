@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">x402 Spike</string>
+    <string name="pay_button">Pay 0.01 USDC</string>
+    <string name="get_button">GET (no x402)</string>
+</resources>
