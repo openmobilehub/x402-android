@@ -1,0 +1,33 @@
+# --- secrets — never commit any of these ---
+.env
+.env.*
+!.env.example
+local.properties
+*.keystore
+*.jks
+secrets.properties
+**/private-key*
+**/seed*.txt
+
+# --- Node ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json.bak
+
+# --- JVM / Gradle / Android ---
+.gradle/
+build/
+**/build/
+out/
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# --- macOS / editors ---
+.DS_Store
+*.swp
+.vscode/
