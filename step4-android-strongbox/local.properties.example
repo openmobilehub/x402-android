@@ -1,0 +1,21 @@
+# Copy this file to `local.properties` (gitignored) and fill in values.
+# Android Studio will auto-populate sdk.dir when you import the project.
+#
+# Step 4 does NOT take a PRIVATE_KEY — the seed is generated on-device
+# and wrapped by StrongBox on first launch. That field intentionally
+# omitted vs. Step 3.
+
+# Path to your Android SDK. On macOS:
+#   /Users/<you>/Library/Android/sdk
+# sdk.dir=/Users/you/Library/Android/sdk
+
+# Optional override. Defaults to the public x402 demo if blank.
+DEMO_URL=https://www.x402.org/protected
+
+# --- Step 4.1 (deferred — see CDP_FOLLOWUP.md) ---
+# Coinbase Developer Platform credentials. When both are set, the per-wallet
+# Recharge button requests a USDC drip via CDP's API instead of opening the
+# web faucet. Falls back to the web flow when missing or on API error.
+# Sign up at https://portal.cdp.coinbase.com/projects/api-keys
+# CDP_API_KEY_NAME=organizations/.../apiKeys/...
+# CDP_API_KEY_PRIVATE_KEY=-----BEGIN EC PRIVATE KEY-----\n...\n-----END EC PRIVATE KEY-----\n
