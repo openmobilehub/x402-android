@@ -31,6 +31,10 @@ Path A (passkey + Coinbase Smart Wallet, fully non-extractable key) is
 the structurally stronger architecture and the documented next step. See
 `PATH_A_NEXT.md`.
 
+`STEP5_HEDERA.md` captures the cross-chain extension after Path A —
+same StrongBox key, payments on both Base Sepolia and Hedera Testnet
+via a self-hosted facilitator.
+
 ## Sequencing — do not skip steps
 
 1. **Node.js + `@x402/axios` script** that pays a public x402 demo endpoint.
