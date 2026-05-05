@@ -38,6 +38,12 @@ unwraps the seed for one ECDSA signature, zeros it, and posts the
 envelope. The settlement is a real on-chain transaction visible on
 [BaseScan](https://sepolia.basescan.org).
 
+### Watch the demo
+
+<a href="https://youtube.com/shorts/gpVeYkYqaJE">
+  <img src="https://img.youtube.com/vi/gpVeYkYqaJE/maxresdefault.jpg" alt="Step 4 demo: paying 0.01 USDC from a Pixel with a StrongBox-backed signature" width="320">
+</a>
+
 ## Architecture (Step 4)
 
 ```
