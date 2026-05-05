@@ -14,7 +14,8 @@ Android in Step 3.
 - `dotenv-kotlin` — reads `step2-kotlin-cli/.env`, falls back to env var
 
 No Android imports. No Spring. No KMP plugins. Plain JVM Kotlin so the protocol
-logic lifts cleanly into `commonMain` later when this folds into Multipaz.
+logic lifts cleanly into `commonMain` if folded into a Kotlin Multiplatform
+identity stack later.
 
 ## Setup
 

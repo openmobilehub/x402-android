@@ -125,12 +125,14 @@ Four concrete pieces. Each is small.
   credential" button that re-runs the off-chain JWT verification with
   the captured token, proving the chain held throughout.
 
-## Why this matters for Multipaz / agentic commerce
+## Why this matters for digital-credential agentic commerce
 
-This is the architectural shape Multipaz is built for. Specifically:
+This is the architectural shape digital-credential wallets like
+[Multipaz](https://github.com/openwallet-foundation-labs/identity-credential)
+are built for. Specifically:
 
 - **mDL/EUDI Wallet credentials are SD-JWT (or mdoc).** The same wallet
-  primitives Multipaz uses for identity can carry payment authorizations.
+  primitives identity wallets use today can carry payment authorizations.
 - **Agentic commerce gateways need exactly this trust framework**: an
   agent making a payment must present cryptographic evidence of user
   authorization, scoped and revocable, verifiable by the merchant
@@ -139,11 +141,9 @@ This is the architectural shape Multipaz is built for. Specifically:
   is off-chain plumbing; the BaseScan tx is the immutable evidence.
 
 A working demo of this flow is high-leverage for:
-- The Multipaz team's design conversations (concrete reference vs.
-  hand-waving)
-- Internal architecture reviews at Google
-- External standards conversations (W3C, FIDO Alliance, IETF httpbis)
-- Conference talks / blog posts
+- Architecture reviews of digital-credential + payments integrations
+- Standards conversations (W3C WAWG, FIDO Alliance, IETF httpbis)
+- Conference talks / blog posts demonstrating the end-to-end shape
 
 ## Risks and dependencies
 

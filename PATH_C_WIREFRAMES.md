@@ -378,6 +378,6 @@ different surface to get equivalent functionality.
 If you ever want to prototype these in actual code (Compose preview /
 Figma / even Streamlit), the highest-leverage one is **Screen 4 (agent
 management)** — it's the one that distinguishes Path C from everything
-else and the one that maps directly to Multipaz's agentic-commerce
-thesis. Screens 1–3 are variations on a theme; screen 4 is the actual
-product.
+else and the one that maps directly to the digital-credential agentic-
+commerce thesis. Screens 1–3 are variations on a theme; screen 4 is the
+actual product.

@@ -1,36 +1,45 @@
-# Project: StrongBox-backed x402 wallet (experiment)
+# Project context for AI coding assistants
 
-## Goal
+This file documents the project's design constraints and conventions. It
+exists for AI coding tools (Claude Code, Cursor, Copilot, etc.) and for
+human contributors who want to understand the rules of the road before
+making changes.
 
-By Sunday night: tap fingerprint on my Pixel, sign an EIP-712
-TransferWithAuthorization for USDC on Base Sepolia, see the
-transaction land on BaseScan. End-to-end demo.
+## What this project is
 
-This is a personal experiment that derisks a larger strategic project
-at work (Multipaz / agentic commerce gateway). Treat it as a learning
-spike, not production code — but don't take dumb shortcuts on key
-handling even in test code, because muscle memory matters.
+A sequenced reference build of a hardware-backed Android wallet for x402
+micropayments. Four steps from a Node hello-world to a Pixel app where
+every payment is signed by an EIP-3009 `TransferWithAuthorization` whose
+secp256k1 seed is wrapped under an AES-256-GCM key resident in StrongBox
+(Titan M2 on Pixel) and unlocked only by a fresh biometric.
 
-## Architecture (Path B first — see research.docx)
+End-to-end goal: tap fingerprint → sign EIP-712 `TransferWithAuthorization`
+for USDC on Base Sepolia → transaction lands on BaseScan.
 
-- secp256k1 seed generated in software
+This is a learning artifact, not production code — but no shortcuts are
+taken on key handling even in test code, because the patterns matter.
+
+## Architecture (Path B)
+
+- secp256k1 seed generated in software via `SecureRandom`
 - AES-256-GCM key in StrongBox, biometric-gated, wraps the seed
 - web3j for EIP-712 encoding + ECDSA signing
 - OkHttp for the x402 client
-- Single-screen Android app, single "Pay" button
+- Single-screen Android app, biometric-gated "Pay" button per signature
 
-Path A (passkey + Coinbase Smart Wallet, fully non-extractable key)
-is the NEXT weekend, not this one. Resist the temptation to jump.
+Path A (passkey + Coinbase Smart Wallet, fully non-extractable key) is
+the structurally stronger architecture and the documented next step. See
+`PATH_A_NEXT.md`.
 
 ## Sequencing — do not skip steps
 
-1. **Node.js + @x402/axios script** that pays a public x402 demo endpoint.
+1. **Node.js + `@x402/axios` script** that pays a public x402 demo endpoint.
    Verify on BaseScan. Goal: feel the protocol with no abstraction.
 2. **Kotlin command-line tool** that does the same thing. Goal: hit all
    the JVM/web3j rocks before Android is in the picture.
 3. **Android app with hardcoded private key.** Goal: prove the network
    plumbing, dependencies, and ProGuard work on the actual device.
-4. **Replace hardcoded key with StrongBox-wrapped seed.** THIS is the
+4. **Replace hardcoded key with StrongBox-wrapped seed.** This is the
    demo. Biometric prompt fires, key never persists in plaintext.
 
 Each step gets its own subdirectory and its own commit. Do not start
@@ -38,60 +47,64 @@ step N+1 until step N has been seen working and committed.
 
 ## Constraints
 
-- **Base Sepolia testnet only.** Never mainnet in this experiment.
+- **Base Sepolia testnet only.** Never mainnet in this repo.
 - **Never commit private keys or seeds**, even test ones. Use BuildConfig
-  fields read from a .env or local.properties, both gitignored.
+  fields read from a `.env` or `local.properties`, both gitignored.
 - Kotlin 2.0+, JDK 17, Android Gradle Plugin 8.4+
 - Target SDK 35, min SDK 28 (StrongBox API requires 28+)
-- No Kotlin Multiplatform yet. Plain Android. KMP refactor comes later
-  when this gets folded into Multipaz.
+- No Kotlin Multiplatform yet. Plain Android.
 
 ## What "done" looks like for each step
 
 1. `node pay.js <url>` returns 200 after auto-paying. Print the txHash.
    Verify it on https://sepolia.basescan.org.
 2. `./gradlew :step2:run --args="<url>"` does the same. Same txHash format.
-3. Install on Pixel, tap button, same payment fires. Hardcoded key in
-   BuildConfig (read from gitignored local.properties).
+3. Install on a StrongBox-capable Android device, tap button, same payment
+   fires. Hardcoded key in BuildConfig (read from gitignored
+   `local.properties`).
 4. Same as step 3, but key is StrongBox-wrapped. Biometric prompt fires.
-   `KeyInfo.getSecurityLevel()` logs `STRONGBOX` (not `TRUSTED_ENVIRONMENT`,
-   not `SOFTWARE`). If StrongBox falls back to TEE, log it loudly and
-   keep going — flagship Pixels sometimes do this for AES-GCM under load.
+   `KeyInfo.getSecurityLevel()` logs `STRONGBOX` (not
+   `TRUSTED_ENVIRONMENT`, not `SOFTWARE`). If StrongBox falls back to TEE,
+   log it loudly and keep going — flagship Pixels sometimes do this for
+   AES-GCM under load.
 
-## My environment
+## Required environment
 
-- Pixel 8 Pro (StrongBox-capable, biometric enrolled)
-- macOS, Android Studio Hedgehog or newer, JDK 17 (sdkman or brew)
-- Coinbase CDP account with API key (free tier facilitator: 1000 tx/month)
-- Test wallet funded with Base Sepolia USDC from https://faucet.circle.com
-- Tiny amount of Base Sepolia ETH for any gas-required side ops
+- Pixel 3+ or Samsung flagship from 2019+ (any device with
+  `FEATURE_STRONGBOX_KEYSTORE`), biometric enrolled
+- Android Studio recent enough for AGP 8.4+, JDK 17
+- A Base Sepolia test wallet funded with USDC from
+  https://faucet.circle.com and a small amount of ETH for any gas-using
+  side operations
+- Optional: Coinbase Developer Platform API key (free tier facilitator:
+  1000 tx/month) — Step 1 demos the public faucet path; CDP credentials
+  enable a one-tap recharge flow described in
+  `step4-android-strongbox/CDP_FOLLOWUP.md`
 
-## Reference
+## Style conventions
 
-Full research, rationale, MPP context, framework comparisons, and the
-NotebookLM podcast prompt are in `research.docx` in this directory.
-The "why" is there; this CLAUDE.md is the "what" and "how."
-
-## Style preferences
-
-- **Be opinionated.** If I'm about to do something dumb, push back.
-  Especially around key handling and silent StrongBox fallbacks.
-- **Show me the diff before applying it.** I want to read code, not skim.
-- **One step at a time.** Do not try to build steps 1–4 in one PR.
+- **Be opinionated in code review.** Especially around key handling and
+  silent StrongBox fallbacks.
+- **Show diffs before applying them.** Reviewers want to read code, not
+  skim.
+- **One step at a time.** Do not collapse Steps 1–4 in one PR.
 - **Prefer standard libraries** over esoteric ones. web3j over hand-rolled
-  crypto. OkHttp over Ktor for this experiment (Ktor comes later in KMP).
-- **Log what matters.** Every signing operation should log the security
-  level of the key it used. Silent fallbacks are the enemy.
+  crypto. OkHttp over Ktor for this experiment (Ktor would come later in
+  any KMP refactor).
+- **Log what matters.** Every signing operation logs the security level
+  of the key it used. Silent fallbacks are the enemy.
 - **Comments are for "why," not "what."** The code should explain itself.
 
-## Things to push back on if I propose them
+## Anti-patterns to push back on
 
 - Putting any of this on Ethereum mainnet "just to try"
-- Skipping step 2 ("I'll just go straight to Android")
+- Skipping Step 2 ("just go straight to Android")
 - Using a package that hasn't been updated in 2+ years
-- Hand-rolling EIP-712 encoding instead of using web3j's StructuredDataEncoder
-- Storing the seed as a String anywhere (use ByteArray, zero it after use)
-- Using `setUserAuthenticationValidityDurationSeconds` > 0 (means the key
-  can be used without a fresh biometric — defeats the purpose)
-- Adding KMP, Compose Multiplatform, or any cross-platform layer this week
+- Hand-rolling EIP-712 encoding instead of using web3j's
+  `StructuredDataEncoder`
+- Storing the seed as a `String` anywhere (use `ByteArray`, zero after use)
+- Using `setUserAuthenticationValidityDurationSeconds > 0` (means the
+  key can be used without a fresh biometric — defeats the purpose)
+- Adding KMP, Compose Multiplatform, or any cross-platform layer
+  prematurely
 - Building Path A (passkey/smart wallet) before Path B works end-to-end

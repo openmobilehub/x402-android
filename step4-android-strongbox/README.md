@@ -120,7 +120,7 @@ one so the Step 4 diff stays focused on the StrongBox + biometric story.
 
 ## What this still doesn't get you (and where Path A goes)
 
-This is **Path B** from research.docx — encrypted-seed-wrap. It's what every
+This is **Path B** — encrypted-seed-wrap. It's what every
 production Android wallet does today. The honest trade-off:
 
 - The wrap key is in StrongBox and never leaves it.

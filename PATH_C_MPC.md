@@ -105,8 +105,9 @@ Privy is the right scope.
 
 ## Decision criteria for Path A vs Path C in the actual product
 
-When this folds back into Multipaz / agentic commerce, the question
-"Path A or Path C" is not generic — it depends on three product choices:
+When applied to a digital-credential agentic-commerce product, the
+question "Path A or Path C" is not generic — it depends on three
+product choices:
 
 1. **Who operates the wallet?**
    - User self-custody, no backend → Path A wins. No shard server, no
@@ -130,9 +131,9 @@ When this folds back into Multipaz / agentic commerce, the question
 The honest take: for **agentic commerce as a B2B product** (we sell agents
 to merchants, agents pay on behalf of users with embedded wallets), Path
 C is probably the more pragmatic answer. For **agentic commerce as a B2C
-self-custody story** (Multipaz-native wallet, user owns the chip-bound
-key, agents are advisory), Path A is the cleaner answer. We may want both,
-behind a common signer interface.
+self-custody story** (digital-credential wallet, user owns the chip-bound
+key, agents are advisory), Path A is the cleaner answer. A real product
+may want both behind a common signer interface.
 
 ## Scope of the eventual Step 6
 
