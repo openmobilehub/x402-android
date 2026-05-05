@@ -32,8 +32,9 @@ class MainActivity : AppCompatActivity() {
     @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
     private val pretty = Json { prettyPrint = true; prettyPrintIndent = "  " }
     private lateinit var wallet: SecureWallet
+    private lateinit var paymentLog: PaymentLog
 
-    private enum class Screen { PAY, WALLETS }
+    private enum class Screen { PAY, WALLETS, HISTORY }
     private var currentScreen = Screen.PAY
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -42,9 +43,13 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         wallet = SecureWallet(this)
+        paymentLog = PaymentLog(this)
 
         val payContent = findViewById<View>(R.id.payContent)
         val walletsContent = findViewById<View>(R.id.walletsContent)
+        val historyContent = findViewById<View>(R.id.historyContent)
+        val historyList = findViewById<LinearLayout>(R.id.historyList)
+        val clearHistoryButton = findViewById<MaterialButton>(R.id.clearHistoryButton)
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNav)
 
         val payerLabel = findViewById<TextView>(R.id.payerLabel)
@@ -69,12 +74,20 @@ class MainActivity : AppCompatActivity() {
                 Screen.PAY -> {
                     payContent.visibility = View.VISIBLE
                     walletsContent.visibility = View.GONE
+                    historyContent.visibility = View.GONE
                     renderHomeState(payerLabel, getButton, payButton)
                 }
                 Screen.WALLETS -> {
                     payContent.visibility = View.GONE
                     walletsContent.visibility = View.VISIBLE
+                    historyContent.visibility = View.GONE
                     renderWalletList(walletList, payerLabel, getButton, payButton)
+                }
+                Screen.HISTORY -> {
+                    payContent.visibility = View.GONE
+                    walletsContent.visibility = View.GONE
+                    historyContent.visibility = View.VISIBLE
+                    renderHistory(historyList)
                 }
             }
         }
@@ -83,12 +96,25 @@ class MainActivity : AppCompatActivity() {
             currentScreen = when (item.itemId) {
                 R.id.nav_pay -> Screen.PAY
                 R.id.nav_wallets -> Screen.WALLETS
+                R.id.nav_history -> Screen.HISTORY
                 else -> currentScreen
             }
             applyScreen()
             true
         }
         bottomNav.selectedItemId = R.id.nav_pay
+
+        clearHistoryButton.setOnClickListener {
+            MaterialAlertDialogBuilder(this@MainActivity)
+                .setTitle(R.string.history_clear)
+                .setMessage(R.string.history_clear_confirm)
+                .setPositiveButton(R.string.history_clear) { _, _ ->
+                    paymentLog.clearAll()
+                    renderHistory(historyList)
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+        }
 
         getButton.setOnClickListener {
             getButton.isEnabled = false
@@ -117,6 +143,9 @@ class MainActivity : AppCompatActivity() {
             status.text = "GET $url to fetch challenge..."
             webview.visibility = View.GONE
             lifecycleScope.launch {
+                // Captured for the onSuccess callback so we can write a PaymentRecord
+                // with the chosen accept entry's amount/asset/recipient.
+                var capturedAccept: JsonObject? = null
                 runCatching {
                     val (challenge, raw) = X402Client.fetchChallenge(url)
                     if (raw.status == 200) {
@@ -136,6 +165,7 @@ class MainActivity : AppCompatActivity() {
                                 (o["scheme"] as? JsonPrimitive)?.content == "exact"
                         } as? JsonObject
                         ?: error("no eip155:84532 + exact in accepts[]")
+                    capturedAccept = acceptObj
 
                     status.text = "Challenge OK. Prompting biometric to unwrap seed..."
                     val envelope = wallet.signWithSeed(activeId) { seed ->
@@ -153,6 +183,24 @@ class MainActivity : AppCompatActivity() {
                                     append("\n  key: ${wallet.lastSecurityLevel() ?: "?"}")
                                 }
                                 showHtml(webview, result.body, result.contentType, result.resolvedUrl)
+
+                                // Capture the payment record only when the tx actually settled — a
+                                // hash that doesn't start with 0x means the server returned 200 but
+                                // didn't include settlement metadata, which we shouldn't log as a
+                                // real payment.
+                                val accept = capturedAccept
+                                if (result.txHash.startsWith("0x") && accept != null) {
+                                    paymentLog.record(
+                                        walletId = activeId,
+                                        txHash = result.txHash,
+                                        resource = url,
+                                        amountBaseUnits = (accept["amount"] as? JsonPrimitive)?.content ?: "",
+                                        asset = (accept["asset"] as? JsonPrimitive)?.content ?: "",
+                                        recipient = (accept["payTo"] as? JsonPrimitive)?.content ?: "",
+                                        securityLevel = wallet.lastSecurityLevel() ?: "?",
+                                        basescanUrl = result.basescanUrl,
+                                    )
+                                }
                             }
                             is PayResult.Failure -> {
                                 status.text = "FAIL: ${result.message}\nhttp: ${result.httpStatus ?: "n/a"}"
@@ -250,6 +298,152 @@ class MainActivity : AppCompatActivity() {
 
     private fun openUrl(url: String) {
         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    }
+
+    private fun renderHistory(historyList: LinearLayout) {
+        historyList.removeAllViews()
+        val records = paymentLog.listAll()
+        if (records.isEmpty()) {
+            val empty = TextView(this).apply {
+                text = getString(R.string.history_empty)
+                textSize = 14f
+                setTextColor(resolveAttrColor(com.google.android.material.R.attr.colorOnSurfaceVariant))
+                setPadding(0, dp(48), 0, 0)
+                gravity = android.view.Gravity.CENTER
+            }
+            historyList.addView(empty)
+            return
+        }
+
+        val walletAddressById: Map<String, String> =
+            wallet.listWallets().associate { it.id to it.address }
+
+        records.forEach { record ->
+            historyList.addView(buildPaymentCard(record, walletAddressById[record.walletId]))
+        }
+    }
+
+    private fun buildPaymentCard(record: PaymentRecord, walletAddress: String?): View {
+        val card = MaterialCardView(this).apply {
+            radius = dp(12).toFloat()
+            cardElevation = 0f
+            strokeWidth = dp(1)
+            strokeColor = resolveAttrColor(com.google.android.material.R.attr.colorOutlineVariant)
+            isClickable = false
+            isFocusable = false
+            isCheckable = false
+            setContentPadding(dp(16), dp(14), dp(16), dp(14))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { setMargins(0, 0, 0, dp(12)) }
+        }
+
+        val inner = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+
+        // Headline row: amount + security level badge.
+        val headlineRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+        }
+        val amountView = TextView(this).apply {
+            text = formatUsdcAmount(record.amountBaseUnits)
+            typeface = Typeface.MONOSPACE
+            textSize = 16f
+            setTypeface(typeface, Typeface.BOLD)
+            setTextColor(resolveAttrColor(com.google.android.material.R.attr.colorOnSurface))
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f,
+            )
+        }
+        headlineRow.addView(amountView)
+
+        if (record.securityLevel.isNotEmpty()) {
+            val badgeColor = if (record.securityLevel.startsWith("STRONGBOX")) {
+                com.google.android.material.R.attr.colorPrimary
+            } else {
+                com.google.android.material.R.attr.colorTertiary
+            }
+            val badge = TextView(this).apply {
+                text = record.securityLevel.split(" ").firstOrNull() ?: record.securityLevel
+                textSize = 10f
+                setTypeface(typeface, Typeface.BOLD)
+                setTextColor(resolveAttrColor(com.google.android.material.R.attr.colorOnPrimary))
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    cornerRadius = dp(8).toFloat()
+                    setColor(resolveAttrColor(badgeColor))
+                }
+                setPadding(dp(8), dp(2), dp(8), dp(2))
+            }
+            headlineRow.addView(badge)
+        }
+        inner.addView(headlineRow)
+
+        // Resource URL.
+        val resourceView = TextView(this).apply {
+            text = record.resource
+            typeface = Typeface.MONOSPACE
+            textSize = 12f
+            setTextColor(resolveAttrColor(com.google.android.material.R.attr.colorOnSurface))
+            setPadding(0, dp(6), 0, 0)
+            maxLines = 2
+            ellipsize = android.text.TextUtils.TruncateAt.MIDDLE
+        }
+        inner.addView(resourceView)
+
+        // Wallet + recipient + timestamp row.
+        val walletShort = walletAddress?.let { "${it.take(10)}…${it.takeLast(6)}" } ?: record.walletId
+        val recipientShort = "${record.recipient.take(10)}…${record.recipient.takeLast(6)}"
+        val timeStr = java.text.DateFormat.getDateTimeInstance(
+            java.text.DateFormat.SHORT,
+            java.text.DateFormat.SHORT,
+        ).format(java.util.Date(record.timestamp))
+        val meta = TextView(this).apply {
+            text = "from: $walletShort  →  $recipientShort\n$timeStr"
+            typeface = Typeface.MONOSPACE
+            textSize = 11f
+            setTextColor(resolveAttrColor(com.google.android.material.R.attr.colorOnSurfaceVariant))
+            setPadding(0, dp(8), 0, 0)
+        }
+        inner.addView(meta)
+
+        // BaseScan link.
+        if (record.basescanUrl.isNotEmpty()) {
+            val basescanBtn = MaterialButton(
+                this,
+                null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle,
+            ).apply {
+                text = "BaseScan: ${record.txHash.take(10)}…"
+                isAllCaps = false
+                textSize = 11f
+                maxLines = 1
+                ellipsize = android.text.TextUtils.TruncateAt.END
+                insetTop = 0
+                insetBottom = 0
+                setPadding(dp(10), dp(6), dp(10), dp(6))
+                icon = androidx.core.content.ContextCompat.getDrawable(
+                    this@MainActivity,
+                    R.drawable.ic_open_in_new_24,
+                )
+                iconSize = dp(14)
+                iconPadding = dp(4)
+                cornerRadius = dp(20)
+                setOnClickListener { openUrl(record.basescanUrl) }
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { setMargins(0, dp(10), 0, 0) }
+            }
+            inner.addView(basescanBtn)
+        }
+
+        card.addView(inner)
+        return card
     }
 
     private fun buildWalletCard(

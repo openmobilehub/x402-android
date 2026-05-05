@@ -7,6 +7,12 @@
     <string name="setup_button_replace">+ New StrongBox wallet</string>
     <string name="tab_pay">Pay</string>
     <string name="tab_wallets">Wallets</string>
+    <string name="tab_history">History</string>
+    <string name="history_screen_title">Payment history</string>
+    <string name="history_screen_subtitle">Every successful x402 payment captured locally with the resource, amount, recipient, and the security level that signed it.</string>
+    <string name="history_empty">No payments yet. Tap Pay to make your first one.</string>
+    <string name="history_clear">Clear history</string>
+    <string name="history_clear_confirm">Clear payment history? On-chain transactions stay on Base; only this local log is cleared.</string>
     <string name="wallets_screen_title">Wallets</string>
     <string name="wallets_screen_subtitle">Each wallet has its own AES-256-GCM wrap key inside StrongBox. Tap to make active. Long-press to delete.</string>
     <string name="new_wallet_fab">New</string>
