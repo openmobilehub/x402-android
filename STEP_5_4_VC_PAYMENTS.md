@@ -50,8 +50,8 @@ library handles it) plus an `extensions` field in the x402 envelope.
 ## Architecture, end-to-end
 
 ```
-┌────────────────┐  L1: Issuer credential (SD-JWT)   ┌────────────────┐
-│   Issuer       │ ─────────────────────────────────▶ │     User       │
+┌────────────────┐  L1: Issuer credential (SD-JWT)     ┌────────────────┐
+│   Issuer       │ ────────────────────────────────-─▶ │     User       │
 │   (e.g. bank)  │                                     │   wallet       │
 └────────────────┘                                     │  (passkey      │
                                                        │   in StrongBox)│
