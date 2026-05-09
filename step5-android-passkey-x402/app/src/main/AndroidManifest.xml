@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!--
+        USE_BIOMETRIC dropped from Step 4: Credential Manager owns the system
+        passkey UI, which already gates on biometric.
+    -->
+
+    <application
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.X402Spike">
+
+        <!--
+            Digital Asset Links bind this app to an RP-ID origin so the system
+            can verify the passkey at creation time and on each assertion.
+            The "include" pattern fetches the canonical assetlinks.json hosted
+            at the RP-ID's well-known path and validates the SHA-256 fingerprint
+            of THIS app's signing cert against the entries there.
+        -->
+        <meta-data
+            android:name="asset_statements"
+            android:resource="@string/asset_statements" />
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

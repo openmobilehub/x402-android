@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">x402 Passkey + Smart Wallet</string>
+
+    <!--
+        RP-ID is the registrable host (no path, no port) per the Digital
+        Asset Links spec. We host /.well-known/assetlinks.json on Vercel.
+
+        IMPORTANT: this app's package is app.x402spike.passkeyx402 (NOT
+        the same as step5's app.x402spike.passkey). The assetlinks.json
+        on Vercel must include BOTH package names with their respective
+        SHA-256 fingerprints.
+    -->
+    <string name="rp_id">wellknown-host.vercel.app</string>
+    <string name="rp_name">x402 Passkey + Smart Wallet</string>
+
+    <string name="asset_statements" translatable="false">
+        [{\"include\": \"https://wellknown-host.vercel.app/.well-known/assetlinks.json\"}]
+    </string>
+
+    <string name="create_passkey_button">Create passkey</string>
+    <string name="show_address_button">Compute smart-wallet address</string>
+    <string name="status_idle">Tap a button.</string>
+</resources>
