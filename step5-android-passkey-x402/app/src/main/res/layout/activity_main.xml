@@ -10,14 +10,16 @@
         android:id="@+id/createButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/create_passkey_button" />
+        android:text="@string/create_wallet_button" />
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/addressButton"
+        android:id="@+id/refreshButton"
+        style="@style/Widget.Material3.Button.OutlinedButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="@string/show_address_button" />
+        android:enabled="false"
+        android:text="@string/recheck_status_button" />
 
     <ScrollView
         android:layout_width="match_parent"
@@ -29,6 +31,7 @@
             android:id="@+id/status"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:autoLink="web"
             android:fontFamily="monospace"
             android:text="@string/status_idle"
             android:textIsSelectable="true"

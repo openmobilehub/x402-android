@@ -187,6 +187,9 @@ class PasskeyWallet(private val activity: FragmentActivity) {
     fun hasPasskey(): Boolean =
         prefs.getString(PREF_CREDENTIAL_ID, null) != null
 
+    fun lastCredentialId(): String? =
+        prefs.getString(PREF_CREDENTIAL_ID, null)
+
     fun lastSecurityLevel(): String? =
         prefs.getString(PREF_LAST_SEC_LEVEL, null)
 

@@ -18,7 +18,7 @@
         [{\"include\": \"https://wellknown-host.vercel.app/.well-known/assetlinks.json\"}]
     </string>
 
-    <string name="create_passkey_button">Create passkey</string>
-    <string name="show_address_button">Compute smart-wallet address</string>
-    <string name="status_idle">Tap a button.</string>
+    <string name="create_wallet_button">Create wallet</string>
+    <string name="recheck_status_button">Re-check deployment status</string>
+    <string name="status_idle">Tap “Create wallet” to provision a passkey in StrongBox and derive the smart-wallet address it controls.</string>
 </resources>
