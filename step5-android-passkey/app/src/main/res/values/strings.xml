@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">x402 Passkey</string>
+
+    <!--
+        RP-ID is the registrable host (no path, no port) per the Digital
+        Asset Links spec. We host /.well-known/assetlinks.json on Vercel.
+
+        For a production deployment, register a dedicated subdomain you
+        own (e.g. x402.example.com) and serve assetlinks.json there.
+    -->
+    <string name="rp_id">wellknown-host.vercel.app</string>
+    <string name="rp_name">x402 Passkey Spike</string>
+
+    <!--
+        Used by AndroidManifest.xml's asset_statements meta-data. The
+        "include" form points the OS at the well-known URL; the system
+        fetches and validates the assetlinks.json there at registration
+        and assertion time.
+
+        IMPORTANT: this URL must serve a valid assetlinks.json with the
+        SHA-256 fingerprint of the signing keystore for THIS app. For
+        the debug keystore:
+            keytool -list -v -keystore ~/.android/debug.keystore \
+                -alias androiddebugkey -storepass android -keypass android
+    -->
+    <string name="asset_statements" translatable="false">
+        [{\"include\": \"https://wellknown-host.vercel.app/.well-known/assetlinks.json\"}]
+    </string>
+
+    <string name="create_passkey_button">Create passkey</string>
+    <string name="sign_challenge_button">Sign test challenge</string>
+    <string name="status_idle">Tap a button.</string>
+</resources>

@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.x402spike.passkey",
+      "sha256_cert_fingerprints": [
+        "D1:3C:DA:88:26:58:D1:80:52:1C:18:48:7F:A4:B2:B8:5A:A1:F9:04:EA:2E:B0:74:17:27:F5:47:57:7B:69:8F"
+      ]
+    }
+  }
+]

@@ -1,0 +1,9 @@
+# Copy to `local.properties` (gitignored) and fill in values as needed.
+# Android Studio will auto-populate sdk.dir on first project import.
+
+# Path to your Android SDK. On macOS:
+#   /Users/<you>/Library/Android/sdk
+# sdk.dir=/Users/you/Library/Android/sdk
+
+# Step 5 M1 doesn't take any other config. M2 will introduce a Pimlico
+# bundler API key and (optionally) a smart-wallet factory address.
