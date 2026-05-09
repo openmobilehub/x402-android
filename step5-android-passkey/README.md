@@ -12,6 +12,43 @@ wallet, no x402 envelope. M2-M4 build on top.
 
 See `../PATH_A_NEXT.md` for the full Path A plan and milestones M1-M4.
 
+## Why Path A — beyond the RAM window
+
+Closing the "seed sits in JVM heap during signing" window is real but
+narrow: it only matters against an attacker who can run code in the
+wallet process (root, debugger, memory-corruption exploit) during the
+sign window. For most threats on a non-rooted Pixel, Step 4 and Step 5
+both rely on the same StrongBox + biometric fence and are roughly
+equivalent.
+
+The bigger payoff is that **Path A unlocks the smart-wallet design
+space**. Once payments settle through a smart-contract wallet that
+verifies P-256 via EIP-1271 / EIP-7951 (M3), you get capabilities that
+are structurally impossible with an EOA-only Step 4 wallet:
+
+- **Multi-owner recovery.** A passkey on the Pixel, a passkey on a
+  laptop, and a YubiKey can all be equivalent owners of the same wallet
+  address. Lose one, the others still work. Step 4's seed has no
+  recovery story — losing the device loses the funds. Detail in
+  `../PATH_A_NEXT.md`'s "Recovery model" section.
+- **Account abstraction features.** Paymasters (gasless transactions,
+  third party covers gas in any token), batched ops (one biometric →
+  approve + transfer in a single UserOp), spending limits and session
+  keys, allowlists, time-locks. None of these compose with a plain EOA.
+- **Upgradeable signature scheme.** Today P-256 via WebAuthn; tomorrow
+  the same wallet address can add a post-quantum signer or a different
+  curve as a second owner without rotating funds.
+- **Social recovery modules.** M-of-N guardian recovery (Safe Recovery
+  module pattern) for users who don't want hardware-key custody.
+
+So the order of magnitude is: Step 4 is a hardware-backed **EOA
+wallet**. Step 5/Path A is the foundation for a hardware-backed
+**smart account**. Different design space, not just different storage.
+
+The cost is real and worth naming: M3 needs a smart wallet contract
++ ERC-4337 bundler + a facilitator that accepts smart-wallet payments,
+plus more on-chain attack surface and higher gas per payment.
+
 ## Three corrections to PATH_A_NEXT.md surfaced during M1 implementation
 
 These are real and worth knowing about:
