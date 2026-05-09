@@ -5,6 +5,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.security.MessageDigest
 
@@ -41,7 +42,8 @@ class MainActivity : AppCompatActivity() {
             signButton.isEnabled = false
             status.text = "Creating passkey... (system passkey UI will appear)"
             lifecycleScope.launch {
-                runCatching { wallet.createPasskey() }
+                val outcome = runCatching { wallet.createPasskey() }
+                outcome
                     .onSuccess { res ->
                         status.text = buildString {
                             appendLine("✓ passkey created")
@@ -55,12 +57,28 @@ class MainActivity : AppCompatActivity() {
                             appendLine()
                             appendLine("security level:")
                             appendLine("  ${res.securityLevel}")
+                            appendLine()
+                            appendLine("Syncing to GPM (~${SYNC_COOLDOWN_MS / 1000}s)…")
                         }
                     }
                     .onFailure { e ->
                         status.text = "FAIL: ${e::class.simpleName}\n${e.message ?: "(no message)"}"
                     }
                 createButton.isEnabled = true
+                // Cooldown: createCredential's promise resolves once the WebAuthn
+                // ceremony completes, but GPM's queryable index needs a beat
+                // longer to see the new entry. Tapping Sign in that window
+                // fires getCredential against an empty index → "Use another
+                // device" sheet. Keep Sign disabled briefly to skip the race.
+                if (outcome.isSuccess) {
+                    delay(SYNC_COOLDOWN_MS)
+                    val current = status.text.toString()
+                    if (current.endsWith("Syncing to GPM (~${SYNC_COOLDOWN_MS / 1000}s)…")) {
+                        status.text = current.removeSuffix(
+                            "Syncing to GPM (~${SYNC_COOLDOWN_MS / 1000}s)…",
+                        ).trimEnd() + "\n\nReady — tap Sign test challenge."
+                    }
+                }
                 signButton.isEnabled = true
             }
         }
@@ -119,4 +137,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun hex(bytes: ByteArray): String =
         bytes.joinToString("") { "%02x".format(it) }
+
+    companion object {
+        // Empirically determined: GPM's ListPasskeyCredentialsOperation
+        // typically reflects a newly-created passkey within ~1.5s. 2s gives
+        // headroom on slower devices. Bump if you see "Use another device"
+        // on the very first sign after create on healthy devices.
+        private const val SYNC_COOLDOWN_MS = 2000L
+    }
 }
