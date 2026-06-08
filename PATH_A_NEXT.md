@@ -89,6 +89,43 @@ attestation as a first-class concept — so the reference/demo stays
 unabstracted (Pimlico + Multipaz directly), with Privy shown as the
 "ship it tomorrow" slide.
 
+## The curve we *don't* use — Ed25519, and why it matters off-EVM
+
+StrongBox's empirically-confirmed supported set (from `SecpStrongboxProbe`
+on Pixel 9 Pro XL / Pixel 10 Pro) is:
+
+```
+[ed25519, p-224, p-256, p-384, p-521, prime256v1, secp224r1, secp256r1]
+```
+
+Two of these are "commonly used in production": **P-256 / secp256r1**
+(the protagonist of Path A) and **Ed25519** (Solana, Hedera, Stellar,
+NEAR, Cardano, SSH, Signal). Path A uses P-256 because EVM chains verify
+secp256k1 natively and we bridge to P-256 via a smart wallet + RIP-7212.
+But Ed25519 unlocks a structurally *simpler* design on non-EVM chains:
+
+| Chain family | Native signature | StrongBox signs it? | Wallet shape |
+|---|---|---|---|
+| EVM (Ethereum, Base) | secp256k1 | ❌ | Smart wallet + P-256 + bundler (all of Path A) |
+| Solana / Hedera / Stellar / NEAR | **Ed25519** | ✅ | **True hardware EOA — no smart wallet, no bundler, no RAM window** |
+
+On an Ed25519-native chain there is no curve mismatch to paper over: the
+StrongBox key signs the transaction directly, the chain verifies it
+natively, the secret never enters RAM, and there is no contract, bundler,
+or paymaster in the path. It is the clean version of what Step 4 was
+*trying* to be.
+
+**Caveat for Hedera specifically:** `STEP5_HEDERA.md` as written takes the
+opposite fork — it uses Hedera's **EVM-compatibility layer with secp256k1**
+(`Sign.signMessage`, `Keys.toChecksumAddress`) precisely so it can reuse
+Step 4's exact code path. That's a defensible *code-reuse* choice, but it
+inherits Path B's RAM-window weakness and ignores that Hedera natively
+supports Ed25519. A native-Ed25519 Hedera account would be hardware-backed
+end to end with none of the smart-wallet machinery. The tradeoff is losing
+the "identical envelope as Base" property and EVM tooling. Decide per goal:
+maximum code reuse (secp256k1/EVM facade) vs. maximum security and
+simplicity (native Ed25519 EOA).
+
 ## Milestone 1 — passkey hello world (the very next thing)
 
 Scope: ~200 lines, ~1 Saturday morning if Credential Manager cooperates.

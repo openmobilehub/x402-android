@@ -32,6 +32,17 @@ both chains use secp256k1, both encode the address as the last 20 bytes
 of `keccak256(pubkey)`, and Hedera's EVM compatibility layer accepts
 EIP-712 signatures verbatim through its precompile.
 
+> **Fork in the road (see `PATH_A_NEXT.md` → "The curve we don't use").**
+> This plan deliberately takes the **secp256k1 / EVM-facade** path to reuse
+> Step 4's exact signing code. That's a code-reuse win, but it inherits
+> Path B's RAM-window weakness (the seed must enter app RAM to sign).
+> Hedera *natively* supports **Ed25519**, which StrongBox can sign
+> directly — a native-Ed25519 Hedera account would be hardware-backed end
+> to end, with no smart wallet, no bundler, and no RAM window. The cost is
+> losing the "identical envelope as Base" property and EVM tooling. Choose
+> per goal: maximum code reuse (this doc) vs. maximum security/simplicity
+> (native Ed25519 EOA).
+
 ## Open question that determines the whole approach
 
 **Does Circle's testnet USDC on Hedera expose `transferWithAuthorization`
