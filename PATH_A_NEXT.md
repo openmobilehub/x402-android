@@ -10,9 +10,20 @@ we can pick up cold.
   (Android StrongBox-wrapped seed) — all committed, all paid the x402
   demo on Base Sepolia.
 - ✅ `KeyInfo.getSecurityLevel()` logs `STRONGBOX` on Pixel 10 Pro / Titan M2.
-- ✅ Path B is the "feel the rocks" version. Identified weakness: 1-ms
-  RAM window for the secp256k1 seed during signing. Inherent to the
-  curve mismatch — StrongBox doesn't support secp256k1.
+- ✅ Path B is the "feel the rocks" version. Identified weakness: the
+  secp256k1 seed must exist in app RAM to sign, and the exposure is
+  **not** a brief window. `BigInteger` is immutable and web3j's
+  `ECKeyPair` / `Credentials` retain copies, so the seed persists in the
+  JVM heap until GC reclaims it — recoverable with `am dumpheap` on a
+  rooted or debuggable device. `seed.fill(0)` only clears the original
+  `ByteArray`, never the `BigInteger.mag` copies. So an auditor recovers
+  the key in ~30 seconds with a heap dump; this fails a security audit on
+  its own. Inherent to the curve mismatch — StrongBox doesn't support
+  secp256k1, so the seed can never be signed inside hardware. To merely
+  *bound* (not eliminate) this for Path B you'd rewrite the signing path
+  in native code (`libsecp256k1` + `mlock` + `memset_s`), keeping the
+  secret in pinned, unswappable pages and out of Java objects. That only
+  shrinks the window — Path A removes it.
 
 ## Goal of Path A
 
@@ -23,6 +34,60 @@ WebAuthn assertions through the RIP-7212 precompile on Base.
 
 Same `payX402` UX as Step 4. Different signer implementation. Different
 on-chain identity (smart wallet contract instead of EOA).
+
+## The signer seam — `multipaz-eth-signer` (council recommendation, 2026-05-12)
+
+Captured after a design council on "secure but simple, conference-worthy."
+The signer should not be a one-off pile of Credential Manager calls inside
+the app. Draw it as a reusable seam between Google's identity stack
+(Multipaz `SecureArea`) and the Ethereum/ERC-4337 side:
+
+```kotlin
+class SecureAreaEthSigner(
+    private val secureArea: SecureArea,   // AndroidKeystore (StrongBox) | Software (test) | Cloud
+    private val alias: String,
+) {
+    suspend fun publicKey(): EcPublicKey
+    suspend fun signUserOpHash(hash: ByteArray): ByteArray  // P-256, DER, low-S; secret never in JVM
+    fun keyAttestation(): KeyAttestation?                   // Android Key Attestation chain
+}
+```
+
+Why a `SecureArea` abstraction: it's curve-correct (P-256 native, no
+secp256k1), it produces a full Android Key Attestation chain, and it's
+GMS-independent at the hardware layer. The dependency on Google Password
+Manager lives only in the *provider* layer (passkey storage/sync), and has
+documented alternatives — third-party Credential Manager providers
+(Bitwarden, 1Password), a hardware FIDO key (YubiKey), or registering the
+app itself as a `CredentialProviderService`.
+
+Build it JVM-first against Multipaz's `SoftwareSecureArea` (sign a fake
+UserOp hash, verify off-chain with BouncyCastle, assert DER + low-S),
+*then* swap in `AndroidKeystoreSecureArea`. Once it signs cleanly, M2's
+UserOp work becomes a thin consumer of this signer.
+
+### Conference framing — "Attested Agents"
+
+Reframe from "another wallet" to **hardware-rooted machine-to-machine
+commerce**: an AI agent that can *prove* (via Android Key Attestation) it
+runs on genuine, unrooted silicon, and pay per-action via x402 — without
+holding any extractable secret. The novel contribution is the
+*composition*, since every primitive already ships in production (Coinbase
+Smart Wallet, WebAuthnSol, RIP-7212, ERC-4337, Multipaz):
+
+1. `multipaz-eth-signer` — the missing bridge (above).
+2. `x402-attested` — an optional `keyAttestation` envelope in the x402
+   payment payload; facilitators can enforce "only StrongBox-rooted
+   devices under Google's attestation CA." Backward-compatible, ~1-page spec.
+3. ERC-7715 session keys — one biometric issues a capped, time-boxed key;
+   subsequent micropayments are silent. This is the UX win that makes
+   Path A *feel* simpler than Path B.
+
+Production note: Privy (now Stripe-owned) abstracts the bundler + signer
+and is the right *productization* path, but it does not expose hardware
+attestation as a first-class concept — so the reference/demo stays
+unabstracted (Pimlico + Multipaz directly), with Privy shown as the
+"ship it tomorrow" slide.
 
 ## Milestone 1 — passkey hello world (the very next thing)
 
